@@ -4,13 +4,29 @@ import (
 	"net/http"
 	"log"	
 	_"github.com/lib/pq"		
+	"github.com/joho/godotenv"
+	"os"
+	"database/sql"
 )
 
 func main(){
+
+
+	//Load env file
+	godotenv.Load()
+	//get the dbUrl
+	dbURL := os.Getenv("DB_URL")
+	// Open a db connection
+	db,err := sql.Open("postgres",dbURL)
+	if err != nil{
+		log.Printf("DB error: %v",err)
+	}
+	defer db.Close() 
+
 	//Create a mux
 	mux := http.NewServeMux()
 	//Create api config struct
-	apiCfg := NewConfig() 
+	apiCfg := NewConfig(db) 
 
 	mux.Handle("/app/",apiCfg.middlewareMetricsInc(http.StripPrefix("/app",http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /healthz",healthHandler)

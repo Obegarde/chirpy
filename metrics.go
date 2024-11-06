@@ -1,22 +1,11 @@
 
 package main
 import(
-	"sync/atomic"
+
 	"net/http"	
 	"fmt"
 )
 
-type apiConfig struct{
-	fileserverHits *atomic.Int32	
-}
-
-
-func NewConfig() *apiConfig{
-	var hits atomic.Int32
-	return &apiConfig{
-		fileserverHits: &hits,
-	}
-}
 
 func (cfg *apiConfig) hitHandler(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type","text/html; charset=utf-8")

@@ -10,12 +10,13 @@ import (
 )
 
 func main(){
-
+	
 
 	//Load env file
 	godotenv.Load()
 	//get the dbUrl
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
 	// Open a db connection
 	db,err := sql.Open("postgres",dbURL)
 	if err != nil{
@@ -26,13 +27,14 @@ func main(){
 	//Create a mux
 	mux := http.NewServeMux()
 	//Create api config struct
-	apiCfg := NewConfig(db) 
+	apiCfg := NewConfig(db,platform) 
 
 	mux.Handle("/app/",apiCfg.middlewareMetricsInc(http.StripPrefix("/app",http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /healthz",healthHandler)
 	mux.HandleFunc("GET /admin/metrics",apiCfg.hitHandler)
-	mux.HandleFunc("POST /admin/reset",apiCfg.resetHitHandler)
+	mux.HandleFunc("POST /admin/reset",apiCfg.resetUsersHandler)
 	mux.HandleFunc("POST /api/validate_chirp",handlerChirpsValidate)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	//Create a ServerStruct
 		server := &http.Server{
 		Addr: ":8080",

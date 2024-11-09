@@ -33,8 +33,10 @@ func main(){
 	mux.HandleFunc("GET /healthz",healthHandler)
 	mux.HandleFunc("GET /admin/metrics",apiCfg.hitHandler)
 	mux.HandleFunc("POST /admin/reset",apiCfg.resetUsersHandler)
-	mux.HandleFunc("POST /api/validate_chirp",handlerChirpsValidate)
+	mux.HandleFunc("POST /api/chirps",apiCfg.handlerCreateChirp)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+	mux.HandleFunc("GET /api/chirps",apiCfg.handlerGetChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}",apiCfg.handlerGetChirpByID)
 	//Create a ServerStruct
 		server := &http.Server{
 		Addr: ":8080",

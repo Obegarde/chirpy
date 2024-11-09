@@ -4,9 +4,17 @@ import(
 	"net/http"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"time"
 )
 
 
+type JSONUser struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+}
 
 func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
 	type parameters struct{
@@ -28,7 +36,12 @@ func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
 		respondWithError(w, http.StatusInternalServerError,"Could not create user",err)
 		return
 	}
-	respondWithJSON(w, 201, user) 
+	respondWithJSON(w, 201, JSONUser{
+				ID: user.ID,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+				Email:	user.Email,
+	}) 
 	
 }
 

@@ -6,6 +6,9 @@ import(
 	"fmt"
 	"github.com/google/uuid"
 	"time"
+	"github.com/obegarde/chirpy/internal/auth"
+	"github.com/obegarde/chirpy/internal/database"
+	
 )
 
 
@@ -19,6 +22,7 @@ type JSONUser struct {
 func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
 	type parameters struct{
 		Email string `json:"email"`
+		Password string `json:"password"`
 	}
 		
 	decoder := json.NewDecoder(r.Body)
@@ -30,7 +34,16 @@ func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), params.Email) 
+	hashed_password, err := auth.HashPassword(params.Password)
+	if err != nil{
+		respondWithError(w, http.StatusInternalServerError,"Falied to hash password", err)
+		return
+	}
+
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+			Email:params.Email,
+			HashedPassword: hashed_password,
+	}) 
 	if err != nil{
 		fmt.Println(err)
 		respondWithError(w, http.StatusInternalServerError,"Could not create user",err)

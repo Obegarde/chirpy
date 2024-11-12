@@ -37,6 +37,7 @@ func main(){
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	mux.HandleFunc("GET /api/chirps",apiCfg.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{chirpID}",apiCfg.handlerGetChirpByID)
+	mux.HandleFunc("POST /api/login",apiCfg.handlerLoginUser)
 	//Create a ServerStruct
 		server := &http.Server{
 		Addr: ":8080",

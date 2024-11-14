@@ -17,6 +17,7 @@ func main(){
 	//get the dbUrl
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	secret := os.Getenv("SECRET")
 	// Open a db connection
 	db,err := sql.Open("postgres",dbURL)
 	if err != nil{
@@ -27,7 +28,7 @@ func main(){
 	//Create a mux
 	mux := http.NewServeMux()
 	//Create api config struct
-	apiCfg := NewConfig(db,platform) 
+	apiCfg := NewConfig(db,platform,secret) 
 
 	mux.Handle("/app/",apiCfg.middlewareMetricsInc(http.StripPrefix("/app",http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /healthz",healthHandler)
@@ -38,6 +39,8 @@ func main(){
 	mux.HandleFunc("GET /api/chirps",apiCfg.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{chirpID}",apiCfg.handlerGetChirpByID)
 	mux.HandleFunc("POST /api/login",apiCfg.handlerLoginUser)
+	mux.HandleFunc("POST /api/refresh",apiCfg.handlerCheckRefresh)
+	mux.HandleFunc("POST /api/revoke",apiCfg.handlerRevokeRefresh)
 	//Create a ServerStruct
 		server := &http.Server{
 		Addr: ":8080",

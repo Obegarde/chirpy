@@ -6,7 +6,8 @@ import (
 	"github.com/obegarde/chirpy/internal/database"
 	"time"
 	"github.com/google/uuid"
-	"database/sql"		
+	"database/sql"
+	"github.com/obegarde/chirpy/internal/auth"
 )
 
 type JSONChirp struct{
@@ -22,8 +23,7 @@ type JSONChirpParams struct {
 }
 
 
-func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){	
-	fmt.Printf("Full Request: %v \n", r)
+func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){		
 	decoder := json.NewDecoder(r.Body)
 	params := JSONChirpParams{}
 	err := decoder.Decode(&params)
@@ -32,8 +32,19 @@ func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){
 		respondWithError(w, http.StatusBadRequest,"Could not decode parameters", err)
 		return
 	}
-	fmt.Printf("Params UserID: %v",params.UserID)
-	validatedUser, err := cfg.db.GetUserByID(r.Context(),params.UserID)
+	tokenString,err := auth.GetBearerToken(r.Header)
+	if err != nil{
+		respondWithError(w, http.StatusUnauthorized,"401 Unauthorized",err)
+		return
+	}
+	idFromToken, err := auth.ValidateJWT(tokenString,cfg.secret)
+	if err != nil{
+		respondWithError(w, http.StatusUnauthorized,"401 Unauthorized", err)
+		return
+	}
+
+
+	validatedUser, err := cfg.db.GetUserByID(r.Context(),idFromToken)
 	if err != nil{
 		respondWithError(w, http.StatusBadRequest,"Could not validate user", fmt.Errorf("Could not validate user"))
 		return

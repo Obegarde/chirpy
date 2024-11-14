@@ -10,14 +10,16 @@ type apiConfig struct{
 	fileserverHits *atomic.Int32	
 	db *database.Queries
 	platform string
+	secret string 
 }
 
 
-func NewConfig(db *sql.DB, currentplatform string) *apiConfig{
+func NewConfig(db *sql.DB, currentplatform string, currentSecret string) *apiConfig{
 	var hits atomic.Int32
 	return &apiConfig{
 		fileserverHits: &hits,
 		db : database.New(db),
 		platform : currentplatform,
+		secret: currentSecret,
 	}
 }

@@ -20,6 +20,7 @@ type JSONUser struct {
 	Email     string    `json:"email"`
 	Token	string	`json:"token"`
 	RefreshToken string `json:"refresh_token"`
+	IsChirpyRed bool `json:"is_chirpy_red"`
 }
 
 func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
@@ -56,7 +57,8 @@ func(cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request){
 				ID: user.ID,
 				CreatedAt: user.CreatedAt,
 				UpdatedAt: user.UpdatedAt,
-				Email:	user.Email,
+				Email:	user.Email,	
+				IsChirpyRed: user.IsChirpyRed.Bool,
 	}) 
 	
 }
@@ -122,6 +124,7 @@ func(cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request){
 			Email:userByEmail.Email,
 			Token:token,
 			RefreshToken:refreshToken.Token,
+			IsChirpyRed: userByEmail.IsChirpyRed.Bool,
 	})
 
 }
@@ -242,6 +245,7 @@ func (cfg *apiConfig)handlerUpdateUser(w http.ResponseWriter, r *http.Request){
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 		Email string `json:"email"`
+		IsChirpyRed bool `json:"is_chirpy_red"`
 
 	}
 	respondWithJSON(w,http.StatusOK,updateResponse{
@@ -249,5 +253,45 @@ func (cfg *apiConfig)handlerUpdateUser(w http.ResponseWriter, r *http.Request){
 		CreatedAt:updateResult.CreatedAt,
 		UpdatedAt:updateResult.UpdatedAt,
 		Email:updateResult.Email,
+		IsChirpyRed:updateResult.IsChirpyRed.Bool,
 	})
+}
+
+func (cfg *apiConfig)handlerUpgradeUser(w http.ResponseWriter,r *http.Request){
+	type Data struct{
+		UserID uuid.UUID `json:"user_id"`
+	}
+	type Event struct{
+		Event string `json:"event"`
+		Data Data `json:"data"`
+	}
+	
+	decoder := json.NewDecoder(r.Body)
+	params := Event{}
+	err := decoder.Decode(&params)
+	if err  != nil{
+		fmt.Println(err)
+		respondWithError(w, http.StatusBadRequest,"Could not decode parameters", err)
+		return
+	}
+	if params.Event == "user.upgraded"{
+		_,err := cfg.db.UpgradeUserToChirpyRed(r.Context(),params.Data.UserID)
+		if err == sql.ErrNoRows{
+			respondWithError(w, http.StatusNotFound,"Could not find User",err)	
+			return
+		}
+		if err != nil{
+			respondWithError(w,http.StatusInternalServerError,"Could not upgrade user",err)
+			return
+		}
+		respondWithError(w,http.StatusNoContent,"",fmt.Errorf(""))
+		return
+	}else{
+		respondWithError(w, http.StatusNoContent,"Not an upgrade event",fmt.Errorf("Only upgrade events to this hook"))	
+		return
+	}
+	
+
+	
+
 }

@@ -39,9 +39,11 @@ func main(){
 	mux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
 	mux.HandleFunc("GET /api/chirps",apiCfg.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{chirpID}",apiCfg.handlerGetChirpByID)
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}",apiCfg.handlerDeleteChirpByID)
 	mux.HandleFunc("POST /api/login",apiCfg.handlerLoginUser)
 	mux.HandleFunc("POST /api/refresh",apiCfg.handlerCheckRefresh)
 	mux.HandleFunc("POST /api/revoke",apiCfg.handlerRevokeRefresh)
+	mux.HandleFunc("POST /api/polka/webhooks",apiCfg.handlerUpgradeUser)
 	//Create a ServerStruct
 		server := &http.Server{
 		Addr: ":8080",

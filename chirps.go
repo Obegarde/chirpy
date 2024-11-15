@@ -43,13 +43,7 @@ func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-
-	validatedUser, err := cfg.db.GetUserByID(r.Context(),idFromToken)
-	if err != nil{
-		respondWithError(w, http.StatusBadRequest,"Could not validate user", fmt.Errorf("Could not validate user"))
-		return
-	}
-	params.UserID = validatedUser.ID		
+	params.UserID = idFromToken		
 	validated, validatedParams := ValidateChirp(params)
 	if !validated{
 		respondWithError(w, http.StatusBadRequest,"Chirp too long", fmt.Errorf("Bad chirp"))

@@ -127,14 +127,14 @@ func(cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request){
 }
 
 func (cfg *apiConfig)handlerCheckRefresh(w http.ResponseWriter, r *http.Request){
-	fmt.Printf("Auth header: %q\n", r.Header.Get("Authorization"))
+	
 	tokenString, err := auth.GetBearerToken(r.Header)
 	if err != nil {
     	fmt.Printf("Error: %v\n", err)
     		respondWithError(w,http.StatusBadRequest,"Failed to read header",err)
 		return
 	}
-	fmt.Printf("Token: %q\n", tokenString)
+	
 	refreshToken, err:= cfg.db.GetRefreshToken(r.Context(),tokenString)
 	if err != nil{
 		respondWithError(w,http.StatusUnauthorized,"401 Unauthorized access",err)
@@ -194,4 +194,60 @@ tokenString, err := auth.GetBearerToken(r.Header)
 		return
 	}
 	respondWithError(w,http.StatusNoContent,"204 Token Revoked",err)
+}
+
+
+func (cfg *apiConfig)handlerUpdateUser(w http.ResponseWriter, r *http.Request){
+	type parameters struct{	
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err  != nil{
+		fmt.Println(err)
+		respondWithError(w, http.StatusBadRequest,"Could not decode parameters", err)
+		return
+	}
+	tokenString,err := auth.GetBearerToken(r.Header)
+	if err != nil{
+		respondWithError(w, http.StatusUnauthorized,"401 Unauthorized",err)
+		return
+	}
+	idFromToken, err := auth.ValidateJWT(tokenString,cfg.secret)
+	if err != nil{
+		respondWithError(w, http.StatusUnauthorized,"401 Unauthorized", err)
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil{
+		respondWithError(w, http.StatusInternalServerError,"Failed to hash password",err)
+		return
+	}
+	
+	updateParams := database.UpdateUserParams{
+		ID : idFromToken,
+		Email : params.Email,
+		HashedPassword : hashedPassword,
+}
+	updateResult,err := cfg.db.UpdateUser(r.Context(),updateParams)
+	if err != nil{
+		respondWithError(w, http.StatusInternalServerError,"Failed to update user information",err)
+		return
+	}
+	type updateResponse struct{
+		ID uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email string `json:"email"`
+
+	}
+	respondWithJSON(w,http.StatusOK,updateResponse{
+		ID:updateResult.ID,
+		CreatedAt:updateResult.CreatedAt,
+		UpdatedAt:updateResult.UpdatedAt,
+		Email:updateResult.Email,
+	})
 }

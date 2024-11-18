@@ -258,6 +258,15 @@ func (cfg *apiConfig)handlerUpdateUser(w http.ResponseWriter, r *http.Request){
 }
 
 func (cfg *apiConfig)handlerUpgradeUser(w http.ResponseWriter,r *http.Request){
+	apiKey, err := auth.GetApiKey(r.Header)
+	if err != nil{
+		respondWithError(w, http.StatusUnauthorized,"401 Unauthorized access",err)
+		return
+	}
+	if apiKey != cfg.polkaKey{
+		respondWithError(w,http.StatusUnauthorized,"401 Unauthorized access", fmt.Errorf("401 Unauthorized access"))
+		return
+	}
 	type Data struct{
 		UserID uuid.UUID `json:"user_id"`
 	}
@@ -268,7 +277,7 @@ func (cfg *apiConfig)handlerUpgradeUser(w http.ResponseWriter,r *http.Request){
 	
 	decoder := json.NewDecoder(r.Body)
 	params := Event{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err  != nil{
 		fmt.Println(err)
 		respondWithError(w, http.StatusBadRequest,"Could not decode parameters", err)

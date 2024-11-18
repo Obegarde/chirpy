@@ -22,7 +22,6 @@ type JSONChirpParams struct {
     UserID uuid.UUID `json:"user_id"`
 }
 
-
 func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){		
 	decoder := json.NewDecoder(r.Body)
 	params := JSONChirpParams{}
@@ -70,15 +69,52 @@ func(cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request){
 	
 }
 
-func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request){
-	allJSONChirps := []JSONChirp{}
-	allChirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil{
-		respondWithError(w, http.StatusInternalServerError,"Could not get chirps", err)
-		return
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request){	
+	JSONChirps := []JSONChirp{}
+	chirpsWanted := []database.Chirp{}
+	authorIDString := r.URL.Query().Get("author_id")
+	sortString := r.URL.Query().Get("sort")
+
+	if authorIDString == ""{
+		if sortString == "" || sortString == "asc"{
+		allChirpsWanted, err := cfg.db.GetAllChirps(r.Context())
+		chirpsWanted = allChirpsWanted
+		if err != nil{
+			respondWithError(w, http.StatusInternalServerError,"Could not get chirps", err)
+			return
+			}
+			}else{
+				allChirpsWanted, err := cfg.db.GetAllChirpsDesc(r.Context())
+				chirpsWanted = allChirpsWanted
+				if err != nil{
+					respondWithError(w, http.StatusInternalServerError,"Could not get chirps", err)
+					return
+			}
+			
+		}
+	}else{
+		authorUUID,err := uuid.Parse(authorIDString)
+		if sortString == "" || sortString == "asc"{
+		if err != nil{
+			respondWithError(w,http.StatusBadRequest,"could not parse author id", err)
+			return
+		}
+		chirpsWanted, err = cfg.db.GetChirpsByAuthor(r.Context(),authorUUID)
+		if err != nil{ 
+			respondWithError(w, http.StatusInternalServerError,"Could get chirps",err)
+			return
+		}
+		}else{
+			chirpsWanted, err = cfg.db.GetChirpsByAuthorDesc(r.Context(),authorUUID)
+			if err != nil{
+				respondWithError(w, http.StatusInternalServerError,"Could get chirps",err)
+				return
+			}
+		}
+
 	}
-	for _, chirp := range allChirps{
-		allJSONChirps = append(allJSONChirps,JSONChirp{
+	for _, chirp := range chirpsWanted{
+		JSONChirps = append(JSONChirps,JSONChirp{
 			ID:chirp.ID,
 			CreatedAt:chirp.CreatedAt,
 			UpdatedAt:chirp.UpdatedAt,
@@ -86,7 +122,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request){
 			UserID:chirp.UserID,
 		})	
 	}
-	respondWithJSON(w,200,allJSONChirps)
+	respondWithJSON(w,200,JSONChirps)
 				
 }
 

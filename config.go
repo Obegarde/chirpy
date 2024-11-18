@@ -11,15 +11,17 @@ type apiConfig struct{
 	db *database.Queries
 	platform string
 	secret string 
+	polkaKey string
 }
 
 
-func NewConfig(db *sql.DB, currentplatform string, currentSecret string) *apiConfig{
+func NewConfig(db *sql.DB, currentplatform string, currentSecret string, currentPolkaKey string) *apiConfig{
 	var hits atomic.Int32
 	return &apiConfig{
 		fileserverHits: &hits,
 		db : database.New(db),
 		platform : currentplatform,
 		secret: currentSecret,
+		polkaKey: currentPolkaKey,
 	}
 }

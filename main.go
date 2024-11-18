@@ -18,6 +18,7 @@ func main(){
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 	// Open a db connection
 	db,err := sql.Open("postgres",dbURL)
 	if err != nil{
@@ -28,7 +29,7 @@ func main(){
 	//Create a mux
 	mux := http.NewServeMux()
 	//Create api config struct
-	apiCfg := NewConfig(db,platform,secret) 
+	apiCfg := NewConfig(db,platform,secret,polkaKey) 
 
 	mux.Handle("/app/",apiCfg.middlewareMetricsInc(http.StripPrefix("/app",http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /healthz",healthHandler)
